@@ -3,7 +3,17 @@ const router = express.Router();
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 
+const DEMO_EMAILS = ['customer@demo.com', 'staff@demo.com', 'admin@demo.com'];
+
 router.use(protect);
+
+// Block demo accounts from making profile changes
+router.use((req, res, next) => {
+  if (DEMO_EMAILS.includes(req.user.email)) {
+    return res.status(403).json({ message: 'Profile changes are disabled for demo accounts.' });
+  }
+  next();
+});
 
 // ── PUT /api/profile ── (update name and email)
 router.put('/', async (req, res) => {

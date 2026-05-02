@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../utils/api';
+import { api, isDemo } from '../utils/api';
 
 function getNavLinks(role) {
   if (role === 'customer') return [
@@ -36,6 +36,7 @@ const ROLE_COLORS = {
 
 export default function ProfilePage() {
   const { user, login } = useAuth();
+  const demo = isDemo(user?.email);
   const [profileForm, setProfileForm] = useState({ name: user?.name || '', email: user?.email || '' });
   const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [profileMsg, setProfileMsg] = useState(null);

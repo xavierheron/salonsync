@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
-import { api } from '../utils/api';
+import { api, isDemo } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const NAV = [
   { label: 'Admin Dashboard', href: '#/admin' },
@@ -18,6 +19,8 @@ export default function ServicesPage() {
   const [modal, setModal] = useState(null); // null | 'add' | { ...service }
   const [form, setForm] = useState(EMPTY_FORM);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const { user } = useAuth();
+  const demo = isDemo(user?.email);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [formError, setFormError] = useState('');
@@ -176,7 +179,8 @@ export default function ServicesPage() {
                         </button>
                         <button className="btn btn-danger"
                           style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
-                          onClick={() => setConfirmDelete(s)}>Delete</button>
+                          disabled={demo}
+                        onClick={() => !demo && setConfirmDelete(s)}>Delete</button>
                       </div>
                     </td>
                   </tr>

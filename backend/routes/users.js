@@ -4,6 +4,8 @@ const User = require('../models/User');
 const Appointment = require('../models/Appointment');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 
+const DEMO_EMAILS = ['customer@demo.com', 'staff@demo.com', 'admin@demo.com'];
+
 router.use(protect, restrictTo('admin'));
 
 // ── GET /api/users ── (all users)
@@ -35,8 +37,16 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ── Demo protection middleware for destructive actions ──
+const blockDemo = (req, res, next) => {
+  if (DEMO_EMAILS.includes(req.user.email)) {
+    return res.status(403).json({ message: 'This action is disabled for demo accounts.' });
+  }
+  next();
+};
+
 // ── PATCH /api/users/:id/deactivate ── (toggle active status)
-router.patch('/:id/deactivate', async (req, res) => {
+router.patch('/:id/deactivate', blockDemo,, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -55,7 +65,7 @@ router.patch('/:id/deactivate', async (req, res) => {
 });
 
 // ── DELETE /api/users/:id ── (delete user and their appointments)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', blockDemo, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });

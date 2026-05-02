@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
-import { api } from '../utils/api';
+import { api, isDemo } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const NAV = [
   { label: 'Admin Dashboard', href: '#/admin' },
@@ -22,6 +23,8 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState(null);
+  const { user } = useAuth();
+  const demo = isDemo(user?.email);
   const [error, setError] = useState('');
 
   const load = async () => {
@@ -157,12 +160,14 @@ export default function UsersPage() {
                           <button
                             className={u.isActive ? 'btn btn-ghost' : 'btn btn-success'}
                             style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
-                            onClick={() => setConfirmDeactivate(u)}>
+                            disabled={demo}
+                        onClick={() => !demo && setConfirmDeactivate(u)}>
                             {u.isActive ? 'Deactivate' : 'Activate'}
                           </button>
                           <button className="btn btn-danger"
                             style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
-                            onClick={() => setConfirmDelete(u)}>
+                            disabled={demo}
+                          onClick={() => !demo && setConfirmDelete(u)}>
                             Delete
                           </button>
                         </div>

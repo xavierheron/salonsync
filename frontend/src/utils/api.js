@@ -2,6 +2,10 @@ const BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://salonsync-backend.onrender.com/api'
   : 'http://localhost:5000/api';
 
+// ── Demo account check ──
+export const DEMO_EMAILS = ['customer@demo.com', 'staff@demo.com', 'admin@demo.com'];
+export const isDemo = (email) => DEMO_EMAILS.includes(email);
+
 // ── Token helpers ──
 export const getToken = () => localStorage.getItem('token');
 export const setToken = (t) => localStorage.setItem('token', t);

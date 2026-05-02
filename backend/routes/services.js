@@ -54,8 +54,16 @@ router.put('/:id', protect, restrictTo('admin'), async (req, res) => {
   }
 });
 
+const DEMO_EMAILS = ['customer@demo.com', 'staff@demo.com', 'admin@demo.com'];
+const blockDemo = (req, res, next) => {
+  if (DEMO_EMAILS.includes(req.user.email)) {
+    return res.status(403).json({ message: 'This action is disabled for demo accounts.' });
+  }
+  next();
+};
+
 // ── DELETE /api/services/:id ── (admin - delete service)
-router.delete('/:id', protect, restrictTo('admin'), async (req, res) => {
+router.delete('/:id', protect, restrictTo('admin'), blockDemo, async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ message: 'Service not found' });
