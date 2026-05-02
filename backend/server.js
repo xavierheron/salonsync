@@ -9,31 +9,16 @@ dotenv.config();
 
 const app = express();
 
+// ── Trust proxy (required for Render + rate limiting) ──
+app.set('trust proxy', 1);
+
 // ── Security Headers (Helmet) ──
 app.use(helmet());
 
-// ── General Rate Limit (all routes) ──
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per 15 minutes
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: 'Too many requests, please try again later.' },
-});
-
-// ── Strict Rate Limit (login & register only) ──
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // max 10 attempts per 15 minutes
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: 'Too many login attempts, please try again in 15 minutes.' },
-});
-
-// ── Middleware ──
-app.use(generalLimiter);
+// ── CORS ──
 const allowedOrigins = [
   'http://localhost:3000',
+  'https://salonsync-sage.vercel.app',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -47,6 +32,27 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// ── General Rate Limit ──
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
+});
+
+// ── Auth Rate Limit ──
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many login attempts, please try again in 15 minutes.' },
+});
+
+// ── Middleware ──
+app.use(generalLimiter);
 app.use(express.json());
 
 // ── Routes ──
