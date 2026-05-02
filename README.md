@@ -4,8 +4,8 @@ A full-stack salon management platform built with React, Node.js, Express and Mo
 
 ## Live Demo
 
-- **Frontend:** (add Vercel URL here)
-- **Backend API:** (add Render URL here)
+- **Frontend:** https://salonsync.vercel.app
+- **Backend API:** https://salonsync-backend.onrender.com
 
 ## Demo Accounts
 
