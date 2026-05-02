@@ -1,0 +1,99 @@
+const express = require('express');
+const router = express.Router();
+const Appointment = require('../models/Appointment');
+const User = require('../models/User');
+const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { emails, sendEmail } = require('../utils/emailService');
+const Service = require('../models/Service');
+
+router.use(protect);
+
+// ── GET /api/appointments ──
+router.get('/', restrictTo('customer'), async (req, res) => {
+  try {
+    const appointments = await Appointment.find({ user: req.user._id }).sort({ date: 1, time: 1 });
+    res.json(appointments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── POST /api/appointments ── (book)
+router.post('/', restrictTo('customer'), async (req, res) => {
+  const { service, date, time } = req.body;
+  try {
+    // Get price from database service
+    const serviceDoc = await Service.findOne({ name: service, isActive: true });
+    if (!serviceDoc) return res.status(400).json({ message: 'Service not found or unavailable' });
+    const appointment = await Appointment.create({ user: req.user._id, service, date, time, price: serviceDoc.price });
+    sendEmail(emails.bookingConfirmation(req.user, appointment));
+    res.status(201).json({ message: 'Appointment booked successfully', appointment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── PUT /api/appointments/:id/reschedule ──
+router.put('/:id/reschedule', restrictTo('customer'), async (req, res) => {
+  const { date, time } = req.body;
+  try {
+    const appointment = await Appointment.findOne({ _id: req.params.id, user: req.user._id });
+    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+    if (appointment.status === 'Completed') return res.status(400).json({ message: 'Cannot reschedule a completed appointment' });
+    appointment.date = date;
+    appointment.time = time;
+    appointment.status = 'Pending Payment';
+    await appointment.save();
+    // Send reschedule email
+    sendEmail(emails.rescheduleConfirmation(req.user, appointment));
+    res.json({ message: 'Appointment rescheduled successfully', appointment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── PUT /api/appointments/:id/pay ──
+router.put('/:id/pay', restrictTo('customer'), async (req, res) => {
+  try {
+    const appointment = await Appointment.findOne({ _id: req.params.id, user: req.user._id });
+    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+    if (appointment.status !== 'Pending Payment') return res.status(400).json({ message: 'Appointment is already paid' });
+    appointment.status = 'Paid';
+    await appointment.save();
+    // Send payment confirmation email
+    sendEmail(emails.paymentConfirmation(req.user, appointment));
+    res.json({ message: 'Payment successful', appointment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── DELETE /api/appointments/:id ── (cancel)
+router.delete('/:id', restrictTo('customer'), async (req, res) => {
+  try {
+    const appointment = await Appointment.findOne({ _id: req.params.id, user: req.user._id });
+    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+    // Send cancellation email before deleting
+    sendEmail(emails.cancellationConfirmation(req.user, appointment));
+    await appointment.deleteOne();
+    res.json({ message: 'Appointment cancelled successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── PUT /api/appointments/:id/complete ── (staff/admin)
+router.put('/:id/complete', restrictTo('staff', 'admin'), async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+    if (appointment.status !== 'Paid') return res.status(400).json({ message: 'Appointment must be paid before marking complete' });
+    appointment.status = 'Completed';
+    await appointment.save();
+    res.json({ message: 'Appointment marked as completed', appointment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+module.exports = router;

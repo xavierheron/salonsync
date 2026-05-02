@@ -1,0 +1,152 @@
+/* ── Card Preview ── */
+.payment-modal {
+  max-width: 500px;
+}
+
+.card-preview {
+  width: 100%;
+  max-width: 340px;
+  height: 190px;
+  margin: 0 auto;
+  perspective: 1000px;
+  position: relative;
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 1.4rem;
+  backface-visibility: hidden;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-front {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.card-back {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.card-preview.flipped .card-front { transform: rotateY(-180deg); }
+.card-preview.flipped .card-back  { transform: rotateY(0deg); }
+
+.card-front-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-chip {
+  width: 38px;
+  height: 28px;
+  background: linear-gradient(135deg, #d4a843, #f0c95a, #c9a84c);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.chip-line {
+  height: 2px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 1px;
+}
+
+.card-number-display {
+  font-family: 'DM Sans', monospace;
+  font-size: 1.15rem;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.card-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 0.15rem;
+}
+
+.card-value {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+/* Back */
+.mag-strip {
+  height: 36px;
+  background: #111;
+  margin: -1.4rem -1.4rem 1.2rem;
+  border-radius: 0;
+}
+
+.cvv-area {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 0.5rem;
+}
+
+.cvv-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.4);
+}
+
+.cvv-box {
+  flex: 1;
+  background: rgba(255,255,255,0.9);
+  color: #111;
+  border-radius: 4px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+/* Spinner */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-top-color: var(--bg);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
