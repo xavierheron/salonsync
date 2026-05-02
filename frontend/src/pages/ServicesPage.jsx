@@ -170,11 +170,13 @@ export default function ServicesPage() {
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button className="btn btn-ghost"
                           style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
-                          onClick={() => openEdit(s)}>Edit</button>
+                          disabled={demo}
+                        onClick={() => !demo && openEdit(s)}>Edit</button>
                         <button
                           className={s.isActive ? 'btn btn-ghost' : 'btn btn-success'}
                           style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
-                          onClick={() => handleToggle(s)}>
+                          disabled={demo}
+                        onClick={() => !demo && handleToggle(s)}>
                           {s.isActive ? 'Disable' : 'Enable'}
                         </button>
                         <button className="btn btn-danger"

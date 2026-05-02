@@ -24,7 +24,7 @@ router.get('/all', protect, restrictTo('admin'), async (req, res) => {
 });
 
 // ── POST /api/services ── (admin - create service)
-router.post('/', protect, restrictTo('admin'), async (req, res) => {
+router.post('/', protect, restrictTo('admin'), blockDemo, async (req, res) => {
   const { name, description, price, duration } = req.body;
   try {
     const existing = await Service.findOne({ name });
@@ -37,7 +37,7 @@ router.post('/', protect, restrictTo('admin'), async (req, res) => {
 });
 
 // ── PUT /api/services/:id ── (admin - update service)
-router.put('/:id', protect, restrictTo('admin'), async (req, res) => {
+router.put('/:id', protect, restrictTo('admin'), blockDemo, async (req, res) => {
   const { name, description, price, duration, isActive } = req.body;
   try {
     const service = await Service.findById(req.params.id);
