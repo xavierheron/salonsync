@@ -3,7 +3,16 @@ const router = express.Router();
 const Service = require('../models/Service');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 
-// ── GET /api/services ── (public - anyone can view active services)
+// ── Demo protection ──
+const DEMO_EMAILS = ['customer@demo.com', 'staff@demo.com', 'admin@demo.com'];
+const blockDemo = (req, res, next) => {
+  if (DEMO_EMAILS.includes(req.user.email)) {
+    return res.status(403).json({ message: 'This action is disabled for demo accounts.' });
+  }
+  next();
+};
+
+// ── GET /api/services ── (public)
 router.get('/', async (req, res) => {
   try {
     const services = await Service.find({ isActive: true }).sort({ name: 1 });
@@ -13,7 +22,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ── GET /api/services/all ── (admin - includes inactive)
+// ── GET /api/services/all ── (admin)
 router.get('/all', protect, restrictTo('admin'), async (req, res) => {
   try {
     const services = await Service.find().sort({ name: 1 });
@@ -23,7 +32,7 @@ router.get('/all', protect, restrictTo('admin'), async (req, res) => {
   }
 });
 
-// ── POST /api/services ── (admin - create service)
+// ── POST /api/services ── (admin - create)
 router.post('/', protect, restrictTo('admin'), blockDemo, async (req, res) => {
   const { name, description, price, duration } = req.body;
   try {
@@ -36,7 +45,7 @@ router.post('/', protect, restrictTo('admin'), blockDemo, async (req, res) => {
   }
 });
 
-// ── PUT /api/services/:id ── (admin - update service)
+// ── PUT /api/services/:id ── (admin - update)
 router.put('/:id', protect, restrictTo('admin'), blockDemo, async (req, res) => {
   const { name, description, price, duration, isActive } = req.body;
   try {
@@ -54,15 +63,7 @@ router.put('/:id', protect, restrictTo('admin'), blockDemo, async (req, res) => 
   }
 });
 
-const DEMO_EMAILS = ['customer@demo.com', 'staff@demo.com', 'admin@demo.com'];
-const blockDemo = (req, res, next) => {
-  if (DEMO_EMAILS.includes(req.user.email)) {
-    return res.status(403).json({ message: 'This action is disabled for demo accounts.' });
-  }
-  next();
-};
-
-// ── DELETE /api/services/:id ── (admin - delete service)
+// ── DELETE /api/services/:id ── (admin - delete)
 router.delete('/:id', protect, restrictTo('admin'), blockDemo, async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
