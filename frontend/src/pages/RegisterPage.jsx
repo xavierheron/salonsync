@@ -1,74 +1,66 @@
-import React, { useState } from 'react';
-import { api } from '../utils/api';
+import React from 'react';
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: '' });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (form.name.trim().length < 3) { setError('Name must be at least 3 characters'); return; }
-    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
-    if (!form.role) { setError('Please select a role'); return; }
-    setLoading(true);
-    try {
-      await api.register(form);
-      setSuccess(true);
-      setTimeout(() => window.location.hash = '#/login', 1800);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
-
   return (
     <div className="auth-page">
-      <div className="auth-card">
+      <div className="auth-card" style={{ textAlign: 'center' }}>
         <div className="auth-brand">
           <h1>SalonSync</h1>
-          <p>Create your account</p>
+          <p>Smart POS & Appointment Management</p>
         </div>
-        <h2>Get started</h2>
-        {error && <div className="alert alert-error">⚠ {error}</div>}
-        {success && <div className="alert alert-success">✓ Account created! Redirecting...</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Full Name</label>
-            <input type="text" placeholder="Enter your name" value={form.name} onChange={set('name')} required />
+
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+
+        <h2 style={{ marginBottom: '0.8rem' }}>Registration Disabled</h2>
+
+        <p style={{ color: 'var(--text2)', fontSize: '0.9rem', marginBottom: '1.8rem', lineHeight: 1.6 }}>
+          This is a demo version of SalonSync. Please use the demo accounts below to explore the platform.
+        </p>
+
+        <div style={{
+          background: 'var(--bg3)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          padding: '1.2rem',
+          marginBottom: '1.5rem',
+          textAlign: 'left',
+        }}>
+          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text3)', marginBottom: '0.8rem' }}>
+            Demo Accounts
           </div>
-          <div className="form-group">
-            <label>Email</label>
-            <input type="email" placeholder="Enter your email" value={form.email} onChange={set('email')} required />
-          </div>
-          <div className="form-group">
-            <label>Password</label>
-            <input type="password" placeholder="Minimum 8 characters" value={form.password} onChange={set('password')} required />
-          </div>
-          <div className="form-group">
-            <label>Role</label>
-            <select value={form.role} onChange={set('role')} required>
-              <option value="">Select Role</option>
-              <option value="customer">Customer</option>
-              <option value="staff">Salon Staff</option>
-              <option value="admin">Administrator</option>
-            </select>
-          </div>
-          <button type="submit" className="btn btn-primary"
-            style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}
-            disabled={loading || success}>
-            {loading ? 'Creating...' : 'Create Account'}
-          </button>
-        </form>
-        <div className="auth-footer">
-          Already have an account?{' '}
-          <a onClick={() => window.location.hash = '#/login'}>Sign in</a>
+          {[
+            { role: 'Customer', email: 'customer@demo.com', password: 'demo1234' },
+            { role: 'Staff', email: 'staff@demo.com', password: 'demo1234' },
+            { role: 'Admin', email: 'admin@demo.com', password: 'demo1234' },
+          ].map((a, i) => (
+            <div key={i} style={{
+              padding: '0.6rem 0',
+              borderBottom: i < 2 ? '1px solid var(--border)' : 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '1rem',
+            }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text)', marginBottom: '0.15rem' }}>
+                  {a.role}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text2)' }}>{a.email}</div>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text3)', fontFamily: 'monospace' }}>
+                {a.password}
+              </div>
+            </div>
+          ))}
         </div>
+
+        <button
+          className="btn btn-primary"
+          style={{ width: '100%', justifyContent: 'center' }}
+          onClick={() => window.location.hash = '#/login'}
+        >
+          Go to Login
+        </button>
       </div>
     </div>
   );

@@ -8,8 +8,10 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-// ── POST /api/auth/register ──
+// ── POST /api/auth/register ── (disabled for demo)
 router.post('/register', async (req, res) => {
+  return res.status(403).json({ message: 'Registration is disabled. Please use the demo accounts to explore SalonSync.' });
+  // eslint-disable-next-line no-unreachable
   const { name, email, password, role } = req.body;
 
   try {
