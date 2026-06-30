@@ -116,7 +116,7 @@ export default function ServicesPage() {
             <h1>Services & Pricing</h1>
             <p>Manage your salon services and prices</p>
           </div>
-          <button className="btn btn-primary" onClick={openAdd}>+ Add Service</button>
+          <button className="btn btn-primary" disabled={demo} onClick={() => !demo && openAdd()}>+ Add Service</button>
         </div>
 
         {error && <div className="alert alert-error">⚠ {error}</div>}

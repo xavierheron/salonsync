@@ -69,6 +69,7 @@ export const api = {
     const q = new URLSearchParams(params).toString();
     return request('/users' + (q ? '?' + q : ''));
   },
+  createUser: (body) => request('/users', { method: 'POST', body: JSON.stringify(body) }),
   deactivateUser: (id) => request('/users/' + id + '/deactivate', { method: 'PATCH' }),
   deleteUser: (id) => request('/users/' + id, { method: 'DELETE' }),
 

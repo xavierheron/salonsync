@@ -45,12 +45,41 @@ const blockDemo = (req, res, next) => {
   next();
 };
 
+// ── POST /api/users ── (admin - create user)
+router.post('/', blockDemo, async (req, res) => {
+  const { name, email, password, role } = req.body;
+  try {
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'Name, email, password, and role are all required' });
+    }
+    if (!['customer', 'staff', 'admin'].includes(role)) {
+      return res.status(400).json({ message: 'Role must be customer, staff, or admin' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: 'An account with that email already exists' });
+    }
+    const user = await User.create({ name, email, password, role });
+    res.status(201).json({
+      message: 'User created successfully',
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, isActive: user.isActive }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── PATCH /api/users/:id/deactivate ── (toggle active status)
 router.patch('/:id/deactivate', blockDemo, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    if (user.role === 'admin') return res.status(403).json({ message: 'Cannot deactivate an admin account' });
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(403).json({ message: 'You cannot deactivate your own account' });
+    }
 
     user.isActive = !user.isActive;
     await user.save();
@@ -69,7 +98,9 @@ router.delete('/:id', blockDemo, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    if (user.role === 'admin') return res.status(403).json({ message: 'Cannot delete an admin account' });
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(403).json({ message: 'You cannot delete your own account' });
+    }
 
     // Delete all their appointments too
     await Appointment.deleteMany({ user: user._id });

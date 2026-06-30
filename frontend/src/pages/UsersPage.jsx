@@ -16,6 +16,8 @@ const ROLE_CLASS = {
   admin: { background: 'rgba(201,168,76,0.12)', color: '#c9a84c' },
 };
 
+const EMPTY_CREATE_FORM = { name: '', email: '', password: '', role: 'customer' };
+
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,10 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState(null);
+  const [createModal, setCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
+  const [createError, setCreateError] = useState('');
+  const [creating, setCreating] = useState(false);
   const { user } = useAuth();
   const demo = isDemo(user?.email);
   const [error, setError] = useState('');
@@ -63,6 +69,30 @@ export default function UsersPage() {
     }
   };
 
+  const openCreate = () => {
+    setCreateForm(EMPTY_CREATE_FORM);
+    setCreateError('');
+    setCreateModal(true);
+  };
+
+  const handleCreate = async () => {
+    setCreateError('');
+    if (!createForm.name.trim()) { setCreateError('Name is required'); return; }
+    if (!createForm.email.trim()) { setCreateError('Email is required'); return; }
+    if (!createForm.password) { setCreateError('Password is required'); return; }
+    if (createForm.password.length < 8) { setCreateError('Password must be at least 8 characters'); return; }
+    setCreating(true);
+    try {
+      await api.createUser(createForm);
+      setCreateModal(false);
+      load();
+    } catch (err) {
+      setCreateError(err.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div>
       <Navbar links={NAV} />
@@ -70,9 +100,9 @@ export default function UsersPage() {
         <div className="dashboard-header">
           <div>
             <h1>Manage Users</h1>
-            <p>View, deactivate or delete user accounts</p>
+            <p>View, create, deactivate or delete user accounts</p>
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
             <div className="stat-card" style={{ minWidth: 120, padding: '0.8rem 1.2rem' }}>
               <div className="stat-label">Total Users</div>
               <div className="stat-value" style={{ fontSize: '1.8rem' }}>{users.length}</div>
@@ -89,6 +119,14 @@ export default function UsersPage() {
                 {users.filter(u => !u.isActive).length}
               </div>
             </div>
+            <button
+              className="btn btn-primary"
+              style={{ alignSelf: 'center' }}
+              disabled={demo}
+              onClick={() => !demo && openCreate()}
+            >
+              + Create User
+            </button>
           </div>
         </div>
 
@@ -127,62 +165,107 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
-                  <tr key={u._id}>
-                    <td style={{ fontWeight: 500, color: 'var(--text)' }}>{u.name}</td>
-                    <td>{u.email}</td>
-                    <td>
-                      <span style={{
-                        ...ROLE_CLASS[u.role],
-                        padding: '3px 10px', borderRadius: '100px',
-                        fontSize: '0.78rem', fontWeight: 600,
-                        display: 'inline-block', textTransform: 'capitalize'
-                      }}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td style={{ color: 'var(--text2)' }}>{u.appointmentCount}</td>
-                    <td>
-                      <span style={{
-                        padding: '3px 10px', borderRadius: '100px',
-                        fontSize: '0.78rem', fontWeight: 600, display: 'inline-flex',
-                        alignItems: 'center', gap: 5,
-                        background: u.isActive ? 'rgba(76,175,125,0.12)' : 'rgba(224,92,92,0.12)',
-                        color: u.isActive ? 'var(--green)' : 'var(--red)',
-                      }}>
-                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
-                        {u.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td>
-                      {u.role !== 'admin' && (
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button
-                            className={u.isActive ? 'btn btn-ghost' : 'btn btn-success'}
-                            style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
-                            disabled={demo}
-                        onClick={() => !demo && setConfirmDeactivate(u)}>
-                            {u.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button className="btn btn-danger"
-                            style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
-                            disabled={demo}
-                          onClick={() => !demo && setConfirmDelete(u)}>
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                      {u.role === 'admin' && (
-                        <span style={{ color: 'var(--text3)', fontSize: '0.82rem' }}>Protected</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {users.map((u) => {
+                  const isSelf = u._id === user?.id;
+                  return (
+                    <tr key={u._id}>
+                      <td style={{ fontWeight: 500, color: 'var(--text)' }}>{u.name}</td>
+                      <td>{u.email}</td>
+                      <td>
+                        <span style={{
+                          ...ROLE_CLASS[u.role],
+                          padding: '3px 10px', borderRadius: '100px',
+                          fontSize: '0.78rem', fontWeight: 600,
+                          display: 'inline-block', textTransform: 'capitalize'
+                        }}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--text2)' }}>{u.appointmentCount}</td>
+                      <td>
+                        <span style={{
+                          padding: '3px 10px', borderRadius: '100px',
+                          fontSize: '0.78rem', fontWeight: 600, display: 'inline-flex',
+                          alignItems: 'center', gap: 5,
+                          background: u.isActive ? 'rgba(76,175,125,0.12)' : 'rgba(224,92,92,0.12)',
+                          color: u.isActive ? 'var(--green)' : 'var(--red)',
+                        }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
+                          {u.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td>
+                        {isSelf ? (
+                          <span style={{ color: 'var(--text3)', fontSize: '0.82rem' }}>You</span>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                              className={u.isActive ? 'btn btn-ghost' : 'btn btn-success'}
+                              style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
+                              disabled={demo}
+                              onClick={() => !demo && setConfirmDeactivate(u)}>
+                              {u.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button className="btn btn-danger"
+                              style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
+                              disabled={demo}
+                              onClick={() => !demo && setConfirmDelete(u)}>
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Create User Modal */}
+      {createModal && (
+        <div className="modal-overlay" onClick={() => setCreateModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
+            <h3>Create New User</h3>
+
+            {createError && <div className="alert alert-error" style={{ marginTop: '1rem' }}>⚠ {createError}</div>}
+
+            <div className="form-group" style={{ marginTop: '1rem' }}>
+              <label>Full Name</label>
+              <input type="text" placeholder="e.g. Jane Smith"
+                value={createForm.name} onChange={e => setCreateForm({ ...createForm, name: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input type="email" placeholder="e.g. jane@example.com"
+                value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input type="password" placeholder="Min. 8 characters"
+                value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Role</label>
+              <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })}>
+                <option value="customer">Customer</option>
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setCreateModal(false)} disabled={creating}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleCreate} disabled={creating}
+                style={{ minWidth: 120, justifyContent: 'center' }}>
+                {creating ? 'Creating...' : 'Create User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Deactivate Confirm Modal */}
       {confirmDeactivate && (
