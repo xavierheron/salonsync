@@ -27,6 +27,11 @@ export default function AppointmentsPage() {
   const [error, setError] = useState('');
   const today = getTodayInJamaica();
 
+  const isWithin24Hours = (date, time) => {
+    const apptDateTime = new Date(`${date}T${time}:00-05:00`);
+    return (apptDateTime - new Date()) / (1000 * 60 * 60) < 24;
+  };
+
   const load = async () => {
     try {
       const data = await api.getMyAppointments();
@@ -123,11 +128,19 @@ export default function AppointmentsPage() {
                           Reschedule
                         </button>
                       )}
-                      <button className="btn btn-danger"
-                        style={{ padding: '0.35rem 0.8rem', fontSize: '0.82rem' }}
-                        onClick={() => setConfirm(b._id)}>
-                        Cancel
-                      </button>
+                      {isWithin24Hours(b.date, b.time) ? (
+                        <button className="btn btn-danger"
+                          style={{ padding: '0.35rem 0.8rem', fontSize: '0.82rem', opacity: 0.45, cursor: 'not-allowed' }}
+                          disabled title="Cannot cancel within 24 hours of appointment">
+                          Cancel
+                        </button>
+                      ) : (
+                        <button className="btn btn-danger"
+                          style={{ padding: '0.35rem 0.8rem', fontSize: '0.82rem' }}
+                          onClick={() => setConfirm(b._id)}>
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   </td>
                 )}

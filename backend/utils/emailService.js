@@ -13,8 +13,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const PRICES = { Haircut: 20, Styling: 30, Coloring: 50 };
-
 function formatTime(timeStr) {
   if (!timeStr) return '';
   const [h, m] = timeStr.split(':').map(Number);
@@ -78,7 +76,6 @@ function baseTemplate(title, bodyContent) {
 }
 
 function appointmentCard(appointment) {
-  const price = PRICES[appointment.service] || 0;
   return `
     <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:10px;margin:20px 0;">
       <tr>
@@ -98,7 +95,7 @@ function appointmentCard(appointment) {
             </tr>
             <tr>
               <td style="padding:6px 0;font-size:13px;color:#a09a92;">Amount Due</td>
-              <td style="padding:6px 0;font-size:18px;color:#c9a84c;text-align:right;font-family:Georgia,serif;">$${price}.00</td>
+              <td style="padding:6px 0;font-size:18px;color:#c9a84c;text-align:right;font-family:Georgia,serif;">$${appointment.price}.00</td>
             </tr>
           </table>
         </td>
@@ -161,6 +158,52 @@ const emails = {
       ${appointmentCard(appointment)}
       <p style="margin:0;font-size:13px;color:#a09a92;">
         We hope to see you again soon. You can book a new appointment anytime through SalonSync.
+      </p>
+    `),
+  }),
+
+  appointmentReminder: (user, appointment) => ({
+    to: user.email,
+    subject: '⏰ Reminder: Your appointment is tomorrow — SalonSync',
+    html: baseTemplate('Appointment Reminder', `
+      <h2 style="margin:0 0 8px;font-family:Georgia,serif;font-size:24px;font-weight:400;color:#f0ede8;">
+        See You Tomorrow!
+      </h2>
+      <p style="margin:0 0 4px;font-size:14px;color:#a09a92;">Hi ${user.name},</p>
+      <p style="margin:0;font-size:14px;color:#a09a92;">
+        This is a friendly reminder that you have an appointment scheduled for tomorrow.
+      </p>
+      ${appointmentCard(appointment)}
+      <p style="margin:0;font-size:13px;color:#a09a92;">
+        Please arrive a few minutes early. If you need to cancel, please do so more than 24 hours in advance.
+      </p>
+    `),
+  }),
+
+  passwordReset: (user, resetUrl) => ({
+    to: user.email,
+    subject: '🔑 Password Reset Request — SalonSync',
+    html: baseTemplate('Password Reset', `
+      <h2 style="margin:0 0 8px;font-family:Georgia,serif;font-size:24px;font-weight:400;color:#f0ede8;">
+        Reset Your Password
+      </h2>
+      <p style="margin:0 0 4px;font-size:14px;color:#a09a92;">Hi ${user.name},</p>
+      <p style="margin:0 0 20px;font-size:14px;color:#a09a92;">
+        We received a request to reset your password. Click the button below to set a new one.
+        This link expires in 1 hour.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center" style="padding:10px 0 24px;">
+            <a href="${resetUrl}" style="display:inline-block;background:#c9a84c;color:#0e0e0f;text-decoration:none;font-weight:700;font-size:14px;padding:14px 32px;border-radius:8px;letter-spacing:0.04em;">
+              Reset Password
+            </a>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:0;font-size:12px;color:#6b6560;">
+        If you did not request a password reset, you can safely ignore this email.
+        Your password will not change.
       </p>
     `),
   }),

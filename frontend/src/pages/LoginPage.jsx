@@ -63,6 +63,13 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+          <a onClick={() => window.location.hash = '#/forgot-password'}
+            style={{ fontSize: '0.85rem', color: 'var(--text2)', cursor: 'pointer' }}>
+            Forgot your password?
+          </a>
+        </div>
+
         <div className="auth-footer">
           Don't have an account?{' '}
           <a onClick={() => window.location.hash = '#/register'}>Create one</a>

@@ -22,6 +22,7 @@ export default function BookAppointment() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [servicesLoading, setServicesLoading] = useState(true);
+  const [takenSlots, setTakenSlots] = useState([]);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -48,6 +49,18 @@ export default function BookAppointment() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleDateChange = async (date) => {
+    setForm(f => ({ ...f, date, time: '' }));
+    setTakenSlots([]);
+    if (!date) return;
+    try {
+      const data = await api.getAvailability(date);
+      setTakenSlots(data.takenSlots || []);
+    } catch {
+      // non-critical — backend will still block double-booking
+    }
+  };
 
   const handleSelectService = (svc) => {
     setSelectedService(svc);
@@ -227,13 +240,23 @@ export default function BookAppointment() {
           <div className="form-group">
             <label>Date</label>
             <input type="date" required min={today}
-              value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+              value={form.date} onChange={e => handleDateChange(e.target.value)} />
           </div>
 
           <div className="form-group">
             <label>Time</label>
             <input type="time" required
               value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
+            {takenSlots.length > 0 && (
+              <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: 'var(--red)' }}>
+                Already booked on this date:{' '}
+                {takenSlots.map(t => {
+                  const [h, m] = t.split(':').map(Number);
+                  const ampm = h >= 12 ? 'PM' : 'AM';
+                  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+                }).join(', ')}
+              </p>
+            )}
           </div>
 
           <button type="submit" className="btn btn-primary"

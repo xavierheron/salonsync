@@ -8,6 +8,18 @@ const Service = require('../models/Service');
 
 router.use(protect);
 
+// ── GET /api/appointments/availability?date=YYYY-MM-DD ──
+router.get('/availability', restrictTo('customer'), async (req, res) => {
+  const { date } = req.query;
+  if (!date) return res.status(400).json({ message: 'Date is required' });
+  try {
+    const appointments = await Appointment.find({ date });
+    res.json({ takenSlots: appointments.map(a => a.time) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── GET /api/appointments ──
 router.get('/', restrictTo('customer'), async (req, res) => {
   try {
@@ -22,9 +34,12 @@ router.get('/', restrictTo('customer'), async (req, res) => {
 router.post('/', restrictTo('customer'), async (req, res) => {
   const { service, date, time } = req.body;
   try {
-    // Get price from database service
     const serviceDoc = await Service.findOne({ name: service, isActive: true });
     if (!serviceDoc) return res.status(400).json({ message: 'Service not found or unavailable' });
+
+    const conflict = await Appointment.findOne({ date, time });
+    if (conflict) return res.status(400).json({ message: 'This time slot is already booked. Please choose a different time.' });
+
     const appointment = await Appointment.create({ user: req.user._id, service, date, time, price: serviceDoc.price });
     sendEmail(emails.bookingConfirmation(req.user, appointment));
     res.status(201).json({ message: 'Appointment booked successfully', appointment });
@@ -40,11 +55,14 @@ router.put('/:id/reschedule', restrictTo('customer'), async (req, res) => {
     const appointment = await Appointment.findOne({ _id: req.params.id, user: req.user._id });
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
     if (appointment.status === 'Completed') return res.status(400).json({ message: 'Cannot reschedule a completed appointment' });
+
+    const conflict = await Appointment.findOne({ date, time, _id: { $ne: appointment._id } });
+    if (conflict) return res.status(400).json({ message: 'This time slot is already booked. Please choose a different time.' });
+
     appointment.date = date;
     appointment.time = time;
     appointment.status = 'Pending Payment';
     await appointment.save();
-    // Send reschedule email
     sendEmail(emails.rescheduleConfirmation(req.user, appointment));
     res.json({ message: 'Appointment rescheduled successfully', appointment });
   } catch (err) {
@@ -60,7 +78,6 @@ router.put('/:id/pay', restrictTo('customer'), async (req, res) => {
     if (appointment.status !== 'Pending Payment') return res.status(400).json({ message: 'Appointment is already paid' });
     appointment.status = 'Paid';
     await appointment.save();
-    // Send payment confirmation email
     sendEmail(emails.paymentConfirmation(req.user, appointment));
     res.json({ message: 'Payment successful', appointment });
   } catch (err) {
@@ -73,7 +90,14 @@ router.delete('/:id', restrictTo('customer'), async (req, res) => {
   try {
     const appointment = await Appointment.findOne({ _id: req.params.id, user: req.user._id });
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
-    // Send cancellation email before deleting
+
+    // Jamaica is UTC-5; block cancellations within 24 hours of the appointment
+    const apptDateTime = new Date(`${appointment.date}T${appointment.time}:00-05:00`);
+    const hoursUntil = (apptDateTime - new Date()) / (1000 * 60 * 60);
+    if (hoursUntil < 24) {
+      return res.status(400).json({ message: 'Appointments cannot be cancelled within 24 hours of the scheduled time.' });
+    }
+
     sendEmail(emails.cancellationConfirmation(req.user, appointment));
     await appointment.deleteOne();
     res.json({ message: 'Appointment cancelled successfully' });

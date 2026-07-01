@@ -39,8 +39,13 @@ export const api = {
   login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   getMe: () => request('/auth/me'),
 
+  // Auth - Password reset
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token, password) => request(`/auth/reset-password/${token}`, { method: 'POST', body: JSON.stringify({ password }) }),
+
   // Customer - Appointments
   getMyAppointments: () => request('/appointments'),
+  getAvailability: (date) => request(`/appointments/availability?date=${date}`),
   bookAppointment: (body) => request('/appointments', { method: 'POST', body: JSON.stringify(body) }),
   rescheduleAppointment: (id, body) => request(`/appointments/${id}/reschedule`, { method: 'PUT', body: JSON.stringify(body) }),
   payAppointment: (id) => request(`/appointments/${id}/pay`, { method: 'PUT' }),

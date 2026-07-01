@@ -14,6 +14,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import UsersPage from './pages/UsersPage';
 import ServicesPage from './pages/ServicesPage';
 import ProfilePage from './pages/ProfilePage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export function AppRouter() {
@@ -40,6 +42,7 @@ export function AppRouter() {
     case '#/how-it-works': return <HowItWorksPage />;
     case '#/login':    return <LoginPage />;
     case '#/register': return <RegisterPage />;
+    case '#/forgot-password': return <ForgotPasswordPage />;
     case '#/customer': return requireAuth('customer', <CustomerDashboard />);
     case '#/book':     return requireAuth('customer', <BookAppointment />);
     case '#/appointments': return requireAuth('customer', <AppointmentsPage />);
@@ -49,6 +52,8 @@ export function AppRouter() {
     case '#/users':    return requireAuth('admin', <UsersPage />);
     case '#/services':  return requireAuth('admin', <ServicesPage />);
     case '#/profile':   return requireAuth(['customer','staff','admin'], <ProfilePage />);
-    default:           return <NotFoundPage />;
+    default:
+      if (route.startsWith('#/reset-password/')) return <ResetPasswordPage />;
+      return <NotFoundPage />;
   }
 }
