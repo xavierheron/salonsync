@@ -8,6 +8,14 @@ const Service = require('../models/Service');
 
 router.use(protect);
 
+function validateBusinessHours(date, time) {
+  const [y, m, d] = date.split('-').map(Number);
+  const dayOfWeek = new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay(); // 0 = Sunday
+  if (dayOfWeek === 0) return 'We are closed on Sundays. Please choose another day.';
+  if (time < '09:00' || time >= '17:00') return 'Appointments must be between 9:00 AM and 5:00 PM.';
+  return null;
+}
+
 // ── GET /api/appointments/availability?date=YYYY-MM-DD ──
 router.get('/availability', restrictTo('customer'), async (req, res) => {
   const { date } = req.query;
@@ -37,6 +45,9 @@ router.post('/', restrictTo('customer'), async (req, res) => {
     const serviceDoc = await Service.findOne({ name: service, isActive: true });
     if (!serviceDoc) return res.status(400).json({ message: 'Service not found or unavailable' });
 
+    const hoursError = validateBusinessHours(date, time);
+    if (hoursError) return res.status(400).json({ message: hoursError });
+
     const conflict = await Appointment.findOne({ date, time });
     if (conflict) return res.status(400).json({ message: 'This time slot is already booked. Please choose a different time.' });
 
@@ -55,6 +66,9 @@ router.put('/:id/reschedule', restrictTo('customer'), async (req, res) => {
     const appointment = await Appointment.findOne({ _id: req.params.id, user: req.user._id });
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
     if (appointment.status === 'Completed') return res.status(400).json({ message: 'Cannot reschedule a completed appointment' });
+
+    const hoursError = validateBusinessHours(date, time);
+    if (hoursError) return res.status(400).json({ message: hoursError });
 
     const conflict = await Appointment.findOne({ date, time, _id: { $ne: appointment._id } });
     if (conflict) return res.status(400).json({ message: 'This time slot is already booked. Please choose a different time.' });

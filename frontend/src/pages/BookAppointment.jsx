@@ -50,10 +50,16 @@ export default function BookAppointment() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const isSunday = (dateStr) => {
+    if (!dateStr) return false;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay() === 0;
+  };
+
   const handleDateChange = async (date) => {
     setForm(f => ({ ...f, date, time: '' }));
     setTakenSlots([]);
-    if (!date) return;
+    if (!date || isSunday(date)) return;
     try {
       const data = await api.getAvailability(date);
       setTakenSlots(data.takenSlots || []);
@@ -73,6 +79,8 @@ export default function BookAppointment() {
     setError('');
     if (!form.service) { setError('Please select a service'); return; }
     if (!form.date || !form.time) { setError('Please select a date and time'); return; }
+    if (isSunday(form.date)) { setError('We are closed on Sundays. Please choose another day.'); return; }
+    if (form.time < '09:00' || form.time >= '17:00') { setError('Appointments must be between 9:00 AM and 5:00 PM.'); return; }
     const selectedDate = new Date(form.date + 'T00:00:00');
     const now = getNowInJamaica(); now.setHours(0, 0, 0, 0);
     if (selectedDate < now) { setError('Cannot book a date in the past'); return; }
@@ -241,11 +249,16 @@ export default function BookAppointment() {
             <label>Date</label>
             <input type="date" required min={today}
               value={form.date} onChange={e => handleDateChange(e.target.value)} />
+            {isSunday(form.date) && (
+              <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: 'var(--red)' }}>
+                We are closed on Sundays. Please choose another day.
+              </p>
+            )}
           </div>
 
           <div className="form-group">
-            <label>Time</label>
-            <input type="time" required
+            <label>Time <span style={{ color: 'var(--text3)', fontWeight: 400, fontSize: '0.8rem' }}>(9:00 AM – 5:00 PM)</span></label>
+            <input type="time" required min="09:00" max="16:59"
               value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
             {takenSlots.length > 0 && (
               <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: 'var(--red)' }}>
@@ -261,7 +274,7 @@ export default function BookAppointment() {
 
           <button type="submit" className="btn btn-primary"
             style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}
-            disabled={!form.service || loading || success || servicesLoading}>
+            disabled={!form.service || loading || success || servicesLoading || isSunday(form.date)}>
             {loading ? 'Booking...' : 'Confirm Booking'}
           </button>
         </form>
